@@ -90,8 +90,6 @@ Chatbot/
 │   ├── __init__.py            # Python says "I'm a package!"
 │   ├── admin.py               # Django admin configs. Customize your dashboard.
 │   ├── apps.py                # App config—wires it all up.
-│   ├── migrations/            # Database evolution logs. Don't touch unless you're brave.
-│   │   └── __init__.py
 │   ├── models.py              # Data models: Questions, Answers, maybe a BotPersonality?
 │   ├── views.py               # The brains: Handles requests, queries the model, spits wit.
 │   ├── urls.py                # URL routing—maps /chat/ to the fun stuff.
