@@ -74,7 +74,7 @@ python manage.py migrate
 python manage.py collectstatic --noinput  # For those sweet static files
 python manage.py runserver
 ```
-Voila! Surf to `http://127.0.0.1:8000/` and start chatting. Type something dumb like "Why is the sky blue?" and watch the magic (or mild confusion) unfold.
+Voila! Surf to `http://127.0.0.1:8000/` and start chatting. Type something dumb like "Why is the sky blue?" and watch the magic (or mild confusion) unfold. HEY! ADD THE QUESTIONS AND ANSWERS FIRST IN THE ADMIN PANEL OF DJANGO FIRST!
 
 **Troubleshooting:** If it barfs errors, check your Python path, model location, and that you didn't accidentally delete the internet. Logs are your friend—`python manage.py runserver --verbosity=2`.
 
