@@ -82,7 +82,7 @@ Before you begin, ensure you have the following installed:
    Download the pre-trained FastText model from the following link:
    [Download Pre-trained Model](https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=drive_link)
 
-   Place the downloaded `model.bin` file in the root directory of the project (`Chatbot/`).
+   Place the downloaded `ChatBot.bin` file in the root directory of the project (`Chatbot/`).
 
 5. **Apply Database Migrations**:
    ```bash
@@ -110,7 +110,7 @@ The chatbot can be configured via the `settings.py` file in the Django project d
 - **Database**: By default, SQLite is used. To use PostgreSQL or MySQL, update the `DATABASES` setting.
 - **FastText Model Path**: Specify the path to the FastText model in the `settings.py` file:
   ```python
-  FASTTEXT_MODEL_PATH = 'model.bin'
+  FASTTEXT_MODEL_PATH = 'ChatBot.bin'
   ```
 - **Static Files**: Ensure static files are collected for production:
   ```bash
@@ -151,7 +151,7 @@ The chatbot can be configured via the `settings.py` file in the Django project d
 
 The chatbot uses a pre-trained FastText model for efficient and accurate responses. To use the provided model:
 
-1. Ensure the `model.bin` file is placed in the root directory of the project (`Chatbot/`).
+1. Ensure the `ChatBot.bin` file is placed in the root directory of the project (`Chatbot/`).
 2. Verify that the `FASTTEXT_MODEL_PATH` in `settings.py` points to `model.bin`.
 3. No additional training is required to start using the chatbot with the pre-trained model.
 
@@ -173,7 +173,7 @@ Chatbot/
 │   ├── templates/          # HTML templates
 │   ├── static/             # CSS, JS, and other static files
 ├── data/                    # Training data for FastText (optional)
-├── model.bin                # Pre-trained FastText model
+├── ChatBot.bin                # Pre-trained FastText model
 ├── manage.py                # Django management script
 ├── Pipfile                  # Dependency management
 ├── README.md                # This file
