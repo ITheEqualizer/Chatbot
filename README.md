@@ -31,7 +31,6 @@ Why "lightweight"? Because life's too short for bloated apps that eat your RAM l
 | **Django**     | The web framework that does it all without the drama. | 4.x vibes    |
 | **FastText**   | Facebook's embedding engine—fast as lightning, smart as a whip. | Gensim-wrapped |
 | **Python**     | The snake that powers the world. Hiss!   | 3.8+         |
-| **Gensim**     | For loading those embeddings like a boss. | Latest       |
 | **SQLite/PostgreSQL** | Your database of choice—keep it simple or go enterprise. | Whatever floats your boat |
 
 *(Note: Exact versions in requirements.txt. Don't @ me if you upgrade and break something—test first, folks!)*
@@ -115,7 +114,6 @@ Chatbot/
 - **requirements.txt**:
   ```
   Django==4.2.7
-  gensim==4.3.2
   fasttext-wheel==0.9.2  # For that embedding speed
   numpy==1.24.3
   scikit-learn==1.3.0  # For similarity calcs
@@ -133,17 +131,6 @@ In `settings.py` (yeah, it's there in the Django standard setup):
 - `SIMILARITY_THRESHOLD = 0.7`—Below this? Bot says "Beats me, ask a human."
 
 Env vars? Use `python-dotenv` if you add it. Pro tip: Never commit secrets. Ever.
-
-## 🚀 Training Your Own Model: Go Full Mad Scientist
-
-Wanna make it *your* bot? Train on custom data!
-
-1. Prep a text file: `questions.txt` with lines like "Q: How do I reset? A: Click the big red button, genius."
-2. Run: `python train_model.py questions.txt` (Add this script? It's easy—see gensim docs).
-3. Output: New `MySuperBot.bin`. Swap in settings.py.
-4. Retrain embeddings: FastText CLI or gensim's `KeyedVectors`.
-
-**Warning:** Training takes coffee breaks. Lots of 'em. And GPU if you're fancy.
 
 ## 🧪 Testing: Because Bugs Are the Real Villains
 
