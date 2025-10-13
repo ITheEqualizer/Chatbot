@@ -69,6 +69,7 @@ This chatbot isn't born genius—it needs its **ChatBot.bin** helmet! Download t
 
 ### 5. **Migrate and Fire It Up**
 ```bash
+python manage.py makemigrations
 python manage.py migrate
 python manage.py collectstatic --noinput  # For those sweet static files
 python manage.py runserver
