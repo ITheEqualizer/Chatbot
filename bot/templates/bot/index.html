@@ -1,0 +1,85 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Q&A Chatbot</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+
+    <style>
+      body {
+        background-color: #f4f4f4;
+      }
+      .chat-container {
+        max-width: 700px;
+        margin: 3rem auto;
+      }
+      .chat-box {
+        height: 420px;
+        overflow-y: auto;
+        background: #fff;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      .message {
+        margin: 0.5rem 0;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        max-width: 75%;
+        line-height: 1.5;
+      }
+      .user {
+        background-color: #209cee;
+        color: #fff;
+        margin-left: auto;
+      }
+      .bot {
+        background-color: #f0f0f0;
+        color: #333;
+        margin-right: auto;
+      }
+      .is-hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="section">
+      <div class="container chat-container">
+        <h1 class="title has-text-centered">🤖 Q&A Chatbot</h1>
+
+        <div
+          id="chat-box"
+          class="chat-box"
+          aria-live="polite"
+          aria-label="chat messages"
+        ></div>
+
+        <p id="typing" class="has-text-grey is-hidden">Bot is typing…</p>
+
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input
+              id="user-input"
+              class="input"
+              type="text"
+              placeholder="Type your question…"
+            />
+          </div>
+          <div class="control">
+            <button id="send-btn" class="button is-primary">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="{% static 'bot/chat.js' %}"></script>
+  </body>
+</html>
