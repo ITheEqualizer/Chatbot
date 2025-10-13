@@ -1,0 +1,7 @@
+asgiref==3.10.0
+Django==5.2.7
+fasttext==0.9.3
+numpy==2.3.3
+pybind11==3.0.1
+setuptools==80.9.0
+sqlparse==0.5.3
