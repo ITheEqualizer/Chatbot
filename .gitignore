@@ -180,3 +180,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 ChatBot.bin
+ChatBot_Persian.bin

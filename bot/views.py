@@ -1,4 +1,3 @@
-from turtle import mode
 from django.shortcuts import render
 import numpy as np
 import fasttext
@@ -7,14 +6,20 @@ from django.http import JsonResponse
 import json
 import re
 from django.views.decorators.csrf import csrf_exempt
+
+# Uncomment the following lines to use the Persian preprocessor
+# from .persian_process import preprocess_persian
+
 # Create your views here.
 
 # MAKE SURE TO DOWNLOAD THE MODEL FROM THE LINK BELOW AND PLACE IT IN THE ROOT DIRECTORY OF PROJECT
 # https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=sharing
+# Persian model is also available, download it from the link below and place it in the root directory of project
+# https://drive.google.com/file/d/1jIMJC03SYYBqsH5YjZ84w-T2J-kRRGTp/view?usp=drive_link
 try:
-    model = fasttext.load_model('ChatBot.bin')
+    model = fasttext.load_model('ChatBot.bin') # or 'ChatBot_Persian.bin' if you want to use the Persian preprocessor
 except Exception as e:
-    print(f"Error loading the model, download it from https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=sharing")
+    print(f"Error loading the model, download it from https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=sharing or https://drive.google.com/file/d/1jIMJC03SYYBqsH5YjZ84w-T2J-kRRGTp/view?usp=drive_link for Persian")
 
 stopwords = {"how", "to", "my", "the", "a", "an", "is", "are", "for", "on", "in", "of"}
 
@@ -25,7 +30,7 @@ def preprocess(text):
     return " ".join(tokens)
 
 def sentence_vector(text):
-    text = preprocess(text)
+    text = preprocess(text) # or preprocess_persian(text) if you want to use the Persian preprocessor
     words = text.split()
     if not words:
         return np.zeros(model.get_dimension())
