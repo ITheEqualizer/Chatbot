@@ -29,7 +29,7 @@ The repository includes all necessary code for the Django application, templates
 | FastText      | 0.9.2 (via fasttext-wheel) - For embeddings and semantic similarity. |
 | NumPy         | 1.24.3 - Numerical computations.            |
 | scikit-learn  | 1.3.0 - Cosine similarity calculations.     |
-| Python        | 3.8+ - Core programming language.           |
+| Python        | 3.11 - Core programming language.           |
 | Database      | SQLite (default) or PostgreSQL for production. |
 | Frontend      | HTML, CSS, JavaScript - Minimalist chat interface. |
 
@@ -197,7 +197,7 @@ Updated: October 16, 2025
 | FastText     | 0.9.2 (از طریق fasttext-wheel) - برای جاسازی‌ها و مشابهت معنایی. |
 | NumPy        | 1.24.3 - محاسبات عددی.                    |
 | scikit-learn | 1.3.0 - محاسبات مشابهت کسینوسی.           |
-| Python       | 3.8+ - زبان برنامه‌نویسی اصلی.           |
+| Python       | 3.11 - زبان برنامه‌نویسی اصلی.           |
 | پایگاه داده | SQLite (پیش‌فرض) یا PostgreSQL برای تولید. |
 | Frontend     | HTML، CSS، JavaScript - رابط چت minimalist. |
 
