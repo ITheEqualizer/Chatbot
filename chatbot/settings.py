@@ -10,22 +10,35 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _env_bool(name, default):
+    return os.environ.get(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!fp9)lz*&ksf2-0x9-v06pbu@a1=q#$4ktr^3%_26dfyhdy74k"
+# Set DJANGO_SECRET_KEY in the environment for any non-local deployment.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-!fp9)lz*&ksf2-0x9-v06pbu@a1=q#$4ktr^3%_26dfyhdy74k",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to True for local development; set DJANGO_DEBUG=False in production.
+DEBUG = _env_bool("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = []
+# Comma-separated list, e.g. DJANGO_ALLOWED_HOSTS="example.com,www.example.com".
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
+]
 
 
 # Application definition
@@ -116,9 +129,37 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static"
+# Destination for `collectstatic` (generated output; not committed to git).
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Chatbot configuration
+# ---------------------
+# CHATBOT_LANGUAGE selects both the FastText model and the text preprocessor:
+#   "en" -> ChatBot.bin + English preprocessor
+#   "fa" -> ChatBot_Persian.bin + Persian (hazm) preprocessor
+# MODEL_PATH can override the model file independently of the language.
+# Embeddings are tied to the active model: rerun `manage.py rebuild_embeddings`
+# after changing the language or model so stored vectors match.
+CHATBOT_LANGUAGE = os.environ.get("CHATBOT_LANGUAGE", "en").strip().lower()
+_DEFAULT_MODEL = "ChatBot_Persian.bin" if CHATBOT_LANGUAGE == "fa" else "ChatBot.bin"
+MODEL_PATH = os.environ.get("MODEL_PATH", _DEFAULT_MODEL)
+
+# Minimum cosine similarity for a stored answer to be returned (else fallback).
+SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.85"))
+
+
+# Logging: surface chatbot warnings/errors (model load failures, cache rebuilds).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "bot": {"handlers": ["console"], "level": os.environ.get("BOT_LOG_LEVEL", "INFO")},
+    },
+}

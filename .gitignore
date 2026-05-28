@@ -60,6 +60,13 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+# `collectstatic` output (generated; regenerated on deploy). App source assets
+# live under <app>/static/ and are still tracked.
+/static/
+/staticfiles/
+
+# FastText model files (downloaded separately; often very large).
+*.bin
 
 # Flask stuff:
 instance/

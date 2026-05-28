@@ -1,74 +1,57 @@
-from django.shortcuts import render
-import numpy as np
-import fasttext
-from .models import QAPair
-from django.http import JsonResponse
 import json
-import re
-from django.views.decorators.csrf import csrf_exempt
+import logging
 
-# Uncomment the following lines to use the Persian preprocessor
-# from .persian_process import preprocess_persian
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_POST
 
-# Create your views here.
+from .cache import embedding_cache
+from .embedding import sentence_vector
 
-# MAKE SURE TO DOWNLOAD THE MODEL FROM THE LINK BELOW AND PLACE IT IN THE ROOT DIRECTORY OF PROJECT
-# https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=sharing
-# Persian model is also available, download it from the link below and place it in the root directory of project
-# https://drive.google.com/file/d/1jIMJC03SYYBqsH5YjZ84w-T2J-kRRGTp/view?usp=drive_link
-try:
-    model = fasttext.load_model('ChatBot.bin') # or 'ChatBot_Persian.bin' if you want to use the Persian preprocessor
-except Exception as e:
-    print(f"Error loading the model, download it from https://drive.google.com/file/d/1u17AHiicxmfeDbvTyuew60SjXCr19UCu/view?usp=sharing or https://drive.google.com/file/d/1jIMJC03SYYBqsH5YjZ84w-T2J-kRRGTp/view?usp=drive_link for Persian")
+logger = logging.getLogger(__name__)
 
-stopwords = {"how", "to", "my", "the", "a", "an", "is", "are", "for", "on", "in", "of"}
+MAX_MESSAGE_LENGTH = 1000
+FALLBACK_ANSWER = "I didn't get it, please ask with more details!"
 
-def preprocess(text):
-    text = text.lower()
-    tokens = re.findall(r'\w+', text)
-    tokens = [t for t in tokens if t not in stopwords]
-    return " ".join(tokens)
-
-def sentence_vector(text):
-    text = preprocess(text) # or preprocess_persian(text) if you want to use the Persian preprocessor
-    words = text.split()
-    if not words:
-        return np.zeros(model.get_dimension())
-    vectors = [model.get_word_vector(w) for w in words]
-    return np.mean(vectors, axis=0)
-
-def cosine_similarity(vec1, vec2):
-    dot = np.dot(vec1, vec2)
-    norm1 = np.linalg.norm(vec1)
-    norm2 = np.linalg.norm(vec2)
-    if norm1 == 0 or norm2 == 0:
-        return 0
-    return dot / (norm1 * norm2)
 
 def index(request):
-    return render(request, 'bot/index.html')
+    return render(request, "bot/index.html")
 
 
-@csrf_exempt
+@require_POST
 def chat_api(request):
-    if request.method == 'POST':
+    """Match a user message against stored QAPairs and return the best answer.
+
+    The corpus embeddings live in a pre-normalized in-memory matrix
+    (:data:`bot.cache.embedding_cache`), so this only embeds the incoming
+    message — not every stored question — on each request.
+    """
+    try:
         data = json.loads(request.body)
-        user_message = data.get('message', '')
-        
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    user_message = (data.get("message") or "").strip()
+    if not user_message:
+        return JsonResponse({"error": "Message must not be empty."}, status=400)
+    if len(user_message) > MAX_MESSAGE_LENGTH:
+        return JsonResponse(
+            {"error": f"Message too long (max {MAX_MESSAGE_LENGTH} characters)."},
+            status=400,
+        )
+
+    try:
         user_vec = sentence_vector(user_message)
-        
-        pairs = QAPair.objects.all()
-        best_score = 0
-        best_answer = "I didn't get it, please ask with more details!"
-        
-        for pair in pairs:
-            question_vec = sentence_vector(pair.question)
-            score = cosine_similarity(user_vec, question_vec)
-            if score > best_score:
-                best_score = score
-                best_answer = pair.answer
-                
-        if best_score < 0.85:
-            best_answer = "I didn't get it, please ask with more details!"
-            
-        return JsonResponse({'answer': best_answer})
+    except Exception:
+        logger.exception("Failed to embed user message")
+        return JsonResponse(
+            {"error": "The chatbot model is unavailable. Please try again later."},
+            status=503,
+        )
+
+    answer, score = embedding_cache.search(user_vec)
+    threshold = getattr(settings, "SIMILARITY_THRESHOLD", 0.85)
+    if answer is None or score < threshold:
+        answer = FALLBACK_ANSWER
+    return JsonResponse({"answer": answer})

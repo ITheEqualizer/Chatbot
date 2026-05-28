@@ -8,7 +8,7 @@ lemmatizer = Lemmatizer()
 def preprocess_persian(text):
     text = normalizer.normalize(text)
     
-    text = re.sub(fr'(.)\1{2,}', r'1', text) # Remove repeated characters
+    text = re.sub(r'(.)\1{2,}', r'\1', text) # Collapse 3+ repeated characters to one
     text = re.sub(r'-+', '', text) # Remove hyphens
     
     text = re.sub(r'[^\w\sآ-ی]', '', text) # Remove non-Persian characters
