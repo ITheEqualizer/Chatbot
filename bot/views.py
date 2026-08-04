@@ -31,6 +31,8 @@ def chat_api(request):
         data = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({"error": "Invalid JSON body."}, status=400)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "JSON body must be an object."}, status=400)
 
     user_message = (data.get("message") or "").strip()
     if not user_message:
