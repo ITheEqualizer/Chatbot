@@ -148,6 +148,13 @@ class ChatApiTests(BotTestCase):
         res = self.client.post(self.url, data="not json", content_type="application/json")
         self.assertEqual(res.status_code, 400)
 
+    def test_non_object_json(self):
+        for payload in ([], "message"):
+            with self.subTest(payload=payload):
+                res = self._post(payload)
+                self.assertEqual(res.status_code, 400)
+                self.assertEqual(res.json(), {"error": "JSON body must be an object."})
+
     def test_empty_message(self):
         self.assertEqual(self._post({"message": "   "}).status_code, 400)
 
