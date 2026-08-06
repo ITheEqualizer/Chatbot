@@ -1,11 +1,12 @@
 import json
+import threading
 
 import numpy as np
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from bot import embedding
-from bot.cache import embedding_cache
+from bot.cache import EmbeddingCache, embedding_cache
 from bot.models import QAPair
 
 
@@ -92,6 +93,31 @@ class ModelSaveTests(BotTestCase):
 
 
 class CacheTests(BotTestCase):
+    def test_invalidation_waits_for_rebuild_lock(self):
+        cache = EmbeddingCache()
+        cache._stale = False
+        started = threading.Event()
+        completed = threading.Event()
+
+        def invalidate():
+            started.set()
+            cache.mark_stale()
+            completed.set()
+
+        cache._lock.acquire()
+        thread = threading.Thread(target=invalidate)
+        try:
+            thread.start()
+            self.assertTrue(started.wait(timeout=1))
+            self.assertFalse(completed.wait(timeout=0.1))
+        finally:
+            cache._lock.release()
+
+        self.assertTrue(completed.wait(timeout=1))
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+        self.assertTrue(cache._stale)
+
     def test_search_returns_best_match(self):
         QAPair.objects.create(question="reset password", answer="reset-answer")
         QAPair.objects.create(question="track order", answer="track-answer")
