@@ -25,7 +25,11 @@ class EmbeddingCache:
 
     def mark_stale(self, *args, **kwargs):
         """Invalidate the cache (signal handler) so it rebuilds on next search."""
-        self._stale = True
+        # Serialize invalidation with rebuild completion. Without the lock, a
+        # signal arriving mid-rebuild can set this flag before rebuild() resets
+        # it to False, losing the newer database change indefinitely.
+        with self._lock:
+            self._stale = True
 
     def rebuild(self):
         """Reload all stored question embeddings into a normalized matrix."""
