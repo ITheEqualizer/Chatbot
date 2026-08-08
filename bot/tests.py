@@ -1,5 +1,6 @@
 import json
 import threading
+from unittest import mock
 
 import numpy as np
 from django.test import Client, TestCase, override_settings
@@ -90,6 +91,40 @@ class ModelSaveTests(BotTestCase):
         self.assertIsNotNone(pair.embedding_vector)
         decoded = embedding.decode_embedding(pair.embedding_vector)
         self.assertTrue(np.allclose(decoded, embedding.sentence_vector("reset password")))
+
+    def test_failed_reembedding_clears_stale_vector(self):
+        pair = QAPair.objects.create(question="reset password", answer="A")
+        pair.question = "track order"
+
+        with mock.patch(
+            "bot.embedding.embed_question_bytes", side_effect=RuntimeError("model unavailable")
+        ):
+            pair.save()
+
+        pair.refresh_from_db()
+        self.assertIsNone(pair.embedding_vector)
+        self.assertEqual(
+            embedding_cache.search(embedding.sentence_vector("reset password")),
+            (None, 0.0),
+        )
+
+    def test_partial_question_save_persists_new_embedding(self):
+        pair = QAPair.objects.create(question="reset password", answer="A")
+        pair.question = "track order"
+        pair.save(update_fields={"question"})
+
+        pair.refresh_from_db()
+        decoded = embedding.decode_embedding(pair.embedding_vector)
+        self.assertTrue(np.allclose(decoded, embedding.sentence_vector("track order")))
+
+    def test_partial_answer_save_does_not_reembed_unchanged_question(self):
+        pair = QAPair.objects.create(question="reset password", answer="A")
+        pair.answer = "B"
+
+        with mock.patch("bot.embedding.embed_question_bytes") as embed:
+            pair.save(update_fields={"answer"})
+
+        embed.assert_not_called()
 
 
 class CacheTests(BotTestCase):

@@ -18,16 +18,27 @@ class QAPair(models.Model):
     def save(self, *args, **kwargs):
         # Compute the question embedding here so it stays in sync with the text.
         # Imported lazily to avoid an import cycle (embedding -> settings only).
-        from .embedding import embed_question_bytes
+        update_fields = kwargs.get("update_fields")
+        question_is_saved = update_fields is None or "question" in update_fields
 
-        try:
-            self.embedding_vector = embed_question_bytes(self.question)
-        except Exception:
-            # Don't block an admin save if the model file is unavailable; the row
-            # can be backfilled later with `manage.py rebuild_embeddings`.
-            logger.warning(
-                "Could not compute embedding for QAPair %r on save; run "
-                "'manage.py rebuild_embeddings' once the model is available.",
-                self.question,
-            )
+        if question_is_saved:
+            from .embedding import embed_question_bytes
+
+            # Never retain an embedding for an earlier question when regeneration
+            # fails; omitting the row from search is safer than a false match.
+            self.embedding_vector = None
+            try:
+                self.embedding_vector = embed_question_bytes(self.question)
+            except Exception:
+                # Don't block an admin save if the model file is unavailable; the
+                # row can be backfilled later with `manage.py rebuild_embeddings`.
+                logger.warning(
+                    "Could not compute embedding for QAPair %r on save; run "
+                    "'manage.py rebuild_embeddings' once the model is available.",
+                    self.question,
+                )
+
+            # Django only persists explicitly named fields during partial saves.
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"embedding_vector"}
         super().save(*args, **kwargs)
