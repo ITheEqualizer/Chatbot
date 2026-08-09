@@ -34,7 +34,11 @@ def chat_api(request):
     if not isinstance(data, dict):
         return JsonResponse({"error": "JSON body must be an object."}, status=400)
 
-    user_message = (data.get("message") or "").strip()
+    raw_message = data.get("message")
+    if raw_message is not None and not isinstance(raw_message, str):
+        return JsonResponse({"error": "Message must be a string."}, status=400)
+
+    user_message = (raw_message or "").strip()
     if not user_message:
         return JsonResponse({"error": "Message must not be empty."}, status=400)
     if len(user_message) > MAX_MESSAGE_LENGTH:
