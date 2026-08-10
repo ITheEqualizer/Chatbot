@@ -20,6 +20,7 @@ class EmbeddingCache:
         self._ids = []
         self._answers = []
         self._matrix_norm = None  # (N, D) L2-normalized rows, or None when empty
+        self._dimension = None
         self._stale = True
         self._lock = threading.Lock()
 
@@ -31,8 +32,8 @@ class EmbeddingCache:
         with self._lock:
             self._stale = True
 
-    def rebuild(self):
-        """Reload all stored question embeddings into a normalized matrix."""
+    def rebuild(self, expected_dimension):
+        """Reload compatible question embeddings into a normalized matrix."""
         from .embedding import decode_embedding
         from .models import QAPair
 
@@ -41,10 +42,20 @@ class EmbeddingCache:
             if not blob:
                 continue
             try:
-                vectors.append(decode_embedding(blob))
+                vector = decode_embedding(blob)
             except Exception:
                 logger.warning("Skipping QAPair %s: undecodable embedding", pk)
                 continue
+            if vector.size != expected_dimension:
+                logger.warning(
+                    "Skipping QAPair %s: embedding dimension %d does not match "
+                    "active model dimension %d",
+                    pk,
+                    vector.size,
+                    expected_dimension,
+                )
+                continue
+            vectors.append(vector)
             ids.append(pk)
             answers.append(answer)
 
@@ -57,14 +68,19 @@ class EmbeddingCache:
             self._matrix_norm = None
         self._ids = ids
         self._answers = answers
+        self._dimension = expected_dimension
         self._stale = False
         logger.info("EmbeddingCache rebuilt: %d entr%s", len(ids), "y" if len(ids) == 1 else "ies")
 
-    def _ensure_fresh(self):
-        if self._stale:
+    def _ensure_fresh(self, expected_dimension):
+        dimension_changed = self._dimension is not None and self._dimension != expected_dimension
+        if self._stale or dimension_changed:
             with self._lock:
-                if self._stale:
-                    self.rebuild()
+                dimension_changed = (
+                    self._dimension is not None and self._dimension != expected_dimension
+                )
+                if self._stale or dimension_changed:
+                    self.rebuild(expected_dimension)
 
     def search(self, query_vec):
         """Return ``(best_answer, best_score)`` for a query vector.
@@ -72,10 +88,12 @@ class EmbeddingCache:
         ``best_score`` is cosine similarity in [-1, 1]. ``query_vec`` need not be
         normalized. Returns ``(None, 0.0)`` for an empty corpus or zero query.
         """
-        self._ensure_fresh()
+        query = np.asarray(query_vec, dtype=np.float32)
+        if query.ndim != 1 or query.size == 0:
+            return None, 0.0
+        self._ensure_fresh(query.size)
         if self._matrix_norm is None or not self._ids:
             return None, 0.0
-        query = np.asarray(query_vec, dtype=np.float32)
         magnitude = np.linalg.norm(query)
         if magnitude == 0:
             return None, 0.0

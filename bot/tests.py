@@ -160,6 +160,23 @@ class CacheTests(BotTestCase):
         self.assertEqual(answer, "reset-answer")
         self.assertAlmostEqual(score, 1.0, places=5)
 
+    def test_search_skips_embeddings_from_a_different_model_dimension(self):
+        QAPair.objects.create(question="reset password", answer="reset-answer")
+        QAPair.objects.bulk_create(
+            [
+                QAPair(
+                    question="incompatible",
+                    answer="wrong-answer",
+                    embedding_vector=np.ones(3, dtype=np.float32).tobytes(),
+                )
+            ]
+        )
+
+        answer, score = embedding_cache.search(embedding.sentence_vector("reset password"))
+
+        self.assertEqual(answer, "reset-answer")
+        self.assertAlmostEqual(score, 1.0, places=5)
+
     def test_invalidation_on_create_and_delete(self):
         QAPair.objects.create(question="reset password", answer="reset-answer")
         embedding_cache.search(embedding.sentence_vector("reset password"))  # warm cache
