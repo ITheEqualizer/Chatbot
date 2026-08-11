@@ -58,6 +58,17 @@ class PreprocessTests(TestCase):
         self.assertEqual(embedding.preprocess("the a an is"), "")
 
 
+class IndexAccessibilityTests(TestCase):
+    def test_question_input_has_persistent_label(self):
+        response = self.client.get(reverse("index"))
+
+        self.assertContains(
+            response,
+            '<label class="is-sr-only" for="user-input">Question</label>',
+            html=True,
+        )
+
+
 class CosineTests(TestCase):
     def test_identical_vectors(self):
         v = np.array([1.0, 2.0, 3.0])
