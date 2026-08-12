@@ -55,6 +55,9 @@ class EmbeddingCache:
                     expected_dimension,
                 )
                 continue
+            if not np.all(np.isfinite(vector)):
+                logger.warning("Skipping QAPair %s: embedding contains non-finite values", pk)
+                continue
             vectors.append(vector)
             ids.append(pk)
             answers.append(answer)
@@ -86,10 +89,11 @@ class EmbeddingCache:
         """Return ``(best_answer, best_score)`` for a query vector.
 
         ``best_score`` is cosine similarity in [-1, 1]. ``query_vec`` need not be
-        normalized. Returns ``(None, 0.0)`` for an empty corpus or zero query.
+        normalized. Returns ``(None, 0.0)`` for an empty corpus or a zero or
+        non-finite query.
         """
         query = np.asarray(query_vec, dtype=np.float32)
-        if query.ndim != 1 or query.size == 0:
+        if query.ndim != 1 or query.size == 0 or not np.all(np.isfinite(query)):
             return None, 0.0
         self._ensure_fresh(query.size)
         if self._matrix_norm is None or not self._ids:

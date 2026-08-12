@@ -188,6 +188,33 @@ class CacheTests(BotTestCase):
         self.assertEqual(answer, "reset-answer")
         self.assertAlmostEqual(score, 1.0, places=5)
 
+    def test_search_skips_non_finite_stored_embeddings(self):
+        QAPair.objects.create(question="reset password", answer="reset-answer")
+        QAPair.objects.bulk_create(
+            [
+                QAPair(
+                    question="corrupt",
+                    answer="wrong-answer",
+                    embedding_vector=np.array(
+                        [np.nan, 0, 0, 0], dtype=np.float32
+                    ).tobytes(),
+                )
+            ]
+        )
+
+        answer, score = embedding_cache.search(embedding.sentence_vector("reset password"))
+
+        self.assertEqual(answer, "reset-answer")
+        self.assertAlmostEqual(score, 1.0, places=5)
+
+    def test_search_rejects_non_finite_query(self):
+        QAPair.objects.create(question="reset password", answer="reset-answer")
+
+        for value in (np.nan, np.inf, -np.inf):
+            with self.subTest(value=value):
+                query = np.array([value, 0, 0, 0], dtype=np.float32)
+                self.assertEqual(embedding_cache.search(query), (None, 0.0))
+
     def test_invalidation_on_create_and_delete(self):
         QAPair.objects.create(question="reset password", answer="reset-answer")
         embedding_cache.search(embedding.sentence_vector("reset password"))  # warm cache
