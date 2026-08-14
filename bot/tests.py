@@ -3,6 +3,7 @@ import threading
 from unittest import mock
 
 import numpy as np
+from django.core.management import call_command
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -136,6 +137,27 @@ class ModelSaveTests(BotTestCase):
             pair.save(update_fields={"answer"})
 
         embed.assert_not_called()
+
+
+class RebuildEmbeddingsCommandTests(BotTestCase):
+    def test_generation_failure_preserves_all_existing_embeddings(self):
+        first = QAPair.objects.create(question="reset password", answer="A")
+        second = QAPair.objects.create(question="track order", answer="B")
+        originals = {
+            first.pk: first.embedding_vector,
+            second.pk: second.embedding_vector,
+        }
+        replacement = np.full(4, 9, dtype=np.float32).tobytes()
+
+        with mock.patch(
+            "bot.management.commands.rebuild_embeddings.embed_question_bytes",
+            side_effect=[replacement, RuntimeError("model unavailable")],
+        ):
+            with self.assertRaisesRegex(RuntimeError, "model unavailable"):
+                call_command("rebuild_embeddings")
+
+        stored = dict(QAPair.objects.values_list("pk", "embedding_vector"))
+        self.assertEqual(stored, originals)
 
 
 class CacheTests(BotTestCase):
