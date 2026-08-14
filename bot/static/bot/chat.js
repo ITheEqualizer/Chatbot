@@ -2,6 +2,7 @@ const chatBox = document.getElementById("chat-box");
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const typingEl = document.getElementById("typing");
+let requestInFlight = false;
 
 // Django CSRF token: prefer the <meta> tag, fall back to the cookie.
 function getCsrfToken() {
@@ -24,13 +25,22 @@ function setTyping(isTyping) {
   typingEl.classList.toggle("is-hidden", !isTyping);
 }
 
+function setRequestInFlight(isInFlight) {
+  requestInFlight = isInFlight;
+  input.disabled = isInFlight;
+  sendBtn.disabled = isInFlight;
+  setTyping(isInFlight);
+}
+
 async function sendMessage() {
+  if (requestInFlight) return;
+
   const text = input.value.trim();
   if (!text) return;
 
   addMessage(text, "user");
   input.value = "";
-  setTyping(true);
+  setRequestInFlight(true);
 
   try {
     const res = await fetch("/api/chat/", {
@@ -48,7 +58,6 @@ async function sendMessage() {
         `Server error (${res.status}). ${errText || "Please try again."}`,
         "bot"
       );
-      setTyping(false);
       return;
     }
 
@@ -61,7 +70,7 @@ async function sendMessage() {
       "bot"
     );
   } finally {
-    setTyping(false);
+    setRequestInFlight(false);
     input.focus();
   }
 }
