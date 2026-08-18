@@ -159,6 +159,27 @@ class RebuildEmbeddingsCommandTests(BotTestCase):
         stored = dict(QAPair.objects.values_list("pk", "embedding_vector"))
         self.assertEqual(stored, originals)
 
+    def test_concurrent_question_change_keeps_its_new_embedding(self):
+        pair = QAPair.objects.create(question="reset password", answer="A")
+        concurrent_embedding = np.full(4, 7, dtype=np.float32).tobytes()
+        stale_replacement = np.full(4, 9, dtype=np.float32).tobytes()
+
+        def change_question_after_read(_question):
+            QAPair.objects.filter(pk=pair.pk).update(
+                question="track order", embedding_vector=concurrent_embedding
+            )
+            return stale_replacement
+
+        with mock.patch(
+            "bot.management.commands.rebuild_embeddings.embed_question_bytes",
+            side_effect=change_question_after_read,
+        ):
+            call_command("rebuild_embeddings")
+
+        pair.refresh_from_db()
+        self.assertEqual(pair.question, "track order")
+        self.assertEqual(pair.embedding_vector, concurrent_embedding)
+
 
 class CacheTests(BotTestCase):
     def test_invalidation_waits_for_rebuild_lock(self):
